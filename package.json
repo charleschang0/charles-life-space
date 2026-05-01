@@ -1,0 +1,11 @@
+{
+  "name": "grad-school-blog",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "preview": "python3 -m http.server 4321 -d dist",
+    "set:studio-password": "node scripts/set-studio-password.mjs"
+  }
+}

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>查爾斯的生活空間｜Studio 登入</title>
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      .login-shell {
+        max-width: 720px;
+      }
+
+      .login-card {
+        display: grid;
+        gap: 22px;
+      }
+
+      .login-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .login-field {
+        display: grid;
+        gap: 8px;
+      }
+
+      .login-field label {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .login-field input {
+        width: 100%;
+        padding: 15px 16px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.76);
+        color: var(--ink);
+        font: inherit;
+      }
+
+      .login-note,
+      .login-result {
+        color: var(--muted);
+        line-height: 1.8;
+      }
+
+      .login-result.is-error {
+        color: #8a2f25;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-shell login-shell">
+      <section class="section">
+        <p class="eyebrow">Private Studio</p>
+        <h1 class="article-page-title">查爾斯的生活空間｜私密編輯入口</h1>
+        <p class="article-lead">
+          這裡是你自己的發佈後台。輸入密碼後才能進入文章管理頁，
+          如果瀏覽器允許，登入狀態會保留 12 小時。
+        </p>
+
+        <form class="login-card" id="login-form">
+          <div class="login-grid">
+            <div class="login-field">
+              <label for="studio-password">Studio 密碼</label>
+              <input id="studio-password" name="studio-password" type="password" required />
+            </div>
+          </div>
+
+          <div class="admin-actions">
+            <button class="button button-primary" type="submit">進入後台</button>
+          </div>
+        </form>
+
+        <p class="login-note">
+          這是一層靜態網站可用的實用保護。它能擋掉一般訪客與誤闖，
+          但如果未來你要更強的權限控制，最好再接真正的身份驗證服務。
+        </p>
+
+        <div class="login-result" id="login-result"></div>
+      </section>
+    </div>
+
+    <script src="./auth-config.js"></script>
+    <script>
+      const form = document.querySelector("#login-form");
+      const passwordField = document.querySelector("#studio-password");
+      const result = document.querySelector("#login-result");
+      const config = window.studioAuthConfig;
+
+      function getSession() {
+        try {
+          const raw = localStorage.getItem(config.storageKey);
+          if (!raw) {
+            return null;
+          }
+          const session = JSON.parse(raw);
+          if (!session.expiresAt || Date.now() > session.expiresAt) {
+            localStorage.removeItem(config.storageKey);
+            return null;
+          }
+          return session;
+        } catch {
+          try {
+            localStorage.removeItem(config.storageKey);
+          } catch {
+          }
+          return null;
+        }
+      }
+
+      function createSession() {
+        try {
+          const expiresAt = Date.now() + config.sessionHours * 60 * 60 * 1000;
+          localStorage.setItem(config.storageKey, JSON.stringify({ expiresAt }));
+        } catch {
+        }
+      }
+
+      if (getSession()) {
+        window.location.replace("./panel.html");
+      }
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        result.textContent = "驗證中...";
+        result.classList.remove("is-error");
+
+        if (passwordField.value !== config.password) {
+          result.textContent = "密碼不正確，請再試一次。";
+          result.classList.add("is-error");
+          passwordField.select();
+          return;
+        }
+
+        createSession();
+        window.location.href = `./panel.html?access=${encodeURIComponent(config.password)}`;
+      });
+    </script>
+  </body>
+</html>
