@@ -609,7 +609,7 @@
                 <strong>編輯設定</strong>
                 <button class="drawer-close" type="button" id="drawer-close">×</button>
               </div>
-              <form id="admin-form" class="desktop-hide"></form>
+              <form id="admin-form" class="desktop-hide" novalidate></form>
 
               <section class="panel-section" id="library-panel">
                 <button class="panel-toggle" type="button" data-target="library-panel">
@@ -642,12 +642,12 @@
                 <div class="panel-body">
                   <div class="admin-field">
                     <label for="date">日期</label>
-                    <input id="date" name="date" type="date" form="admin-form" required />
+                    <input id="date" name="date" type="date" form="admin-form" />
                   </div>
 
                   <div class="admin-field">
                     <label for="category">分類</label>
-                    <input id="category" name="category" form="admin-form" list="category-options" placeholder="例如 生活、學習、旅遊、留學申請" required />
+                    <input id="category" name="category" form="admin-form" list="category-options" placeholder="例如 生活、學習、旅遊、留學申請" />
                     <datalist id="category-options">
                       <option value="生活"></option>
                       <option value="學習"></option>
@@ -990,14 +990,17 @@
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
         const payload = getPayload();
-        if (!payload.slug) {
-          renderMessage("請先填寫標題或 slug。", true);
+        const validationError = validatePublishPayload(payload);
+        if (validationError) {
+          renderMessage(validationError.message, true);
+          if (validationError.panelId) {
+            openPanel(validationError.panelId);
+          }
           return;
         }
         if (!hasRepoConfig(payload)) {
           renderMessage("發佈前請先完成連線設定。", true);
-          document.getElementById("repo-panel").classList.add("is-open");
-          openDrawer();
+          openPanel("repo-panel");
           return;
         }
         persistSettings();
@@ -1539,6 +1542,38 @@
 
       function hasRepoConfig(payload) {
         return payload.owner && payload.repo && payload.branch && payload.token;
+      }
+
+      function validatePublishPayload(payload) {
+        if (!payload.title.trim()) {
+          return {
+            message: "請先輸入文章標題。",
+            panelId: null
+          };
+        }
+
+        if (!payload.slug) {
+          return {
+            message: "請先填寫標題或 slug。",
+            panelId: null
+          };
+        }
+
+        if (!payload.date) {
+          return {
+            message: "請先在文章設定補上日期。",
+            panelId: "meta-panel"
+          };
+        }
+
+        if (!payload.category.trim()) {
+          return {
+            message: "請先在文章設定補上分類。",
+            panelId: "meta-panel"
+          };
+        }
+
+        return null;
       }
 
       function buildPublishedUrl(payload) {

@@ -5,14 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>查爾斯的生活空間｜Studio 登入</title>
     <link rel="stylesheet" href="../styles.css" />
+    <link rel="stylesheet" href="../src/styles.css" />
     <style>
+      body {
+        display: grid;
+        align-items: center;
+      }
+
       .login-shell {
-        max-width: 720px;
+        max-width: 760px;
       }
 
       .login-card {
         display: grid;
         gap: 22px;
+      }
+
+      .login-section {
+        display: grid;
+        gap: 22px;
+      }
+
+      .article-page-title {
+        margin: 0;
+        font-family: var(--font-display);
+        font-size: clamp(2.2rem, 5vw, 4rem);
+        line-height: 1.08;
+      }
+
+      .admin-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
       }
 
       .login-grid {
@@ -49,11 +73,17 @@
       .login-result.is-error {
         color: #8a2f25;
       }
+
+      @media (max-width: 760px) {
+        body {
+          display: block;
+        }
+      }
     </style>
   </head>
   <body>
     <div class="page-shell login-shell">
-      <section class="section">
+      <section class="section login-section">
         <p class="eyebrow">Private Studio</p>
         <h1 class="article-page-title">查爾斯的生活空間｜私密編輯入口</h1>
         <p class="article-lead">
