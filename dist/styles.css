@@ -95,20 +95,6 @@ a {
   pointer-events: none;
 }
 
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 22px 28px 0;
-}
-
-.brand {
-  font-family: var(--font-display);
-  font-size: 1.3rem;
-  letter-spacing: 0.04em;
-}
-
 .nav-links {
   display: flex;
   gap: 20px;
@@ -132,13 +118,17 @@ a {
 
 .hero-content {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.9fr);
+  grid-template-columns: 1fr;
   gap: 28px;
-  padding: 58px 28px 30px;
+  padding: 34px 32px 32px;
 }
 
 .hero-copy {
-  padding: 18px 6px 18px 4px;
+  padding: 0;
+}
+
+.hero-copy-simple {
+  max-width: 860px;
 }
 
 .eyebrow,
@@ -171,17 +161,19 @@ a {
 }
 
 .hero-copy h1 {
-  max-width: 10ch;
-  margin-top: 14px;
-  font-size: clamp(3rem, 6vw, 5.8rem);
+  max-width: none;
+  margin-top: 0;
+  font-size: clamp(2.4rem, 4.3vw, 4rem);
+  line-height: 1.08;
+  letter-spacing: -0.01em;
 }
 
 .intro {
-  max-width: 62ch;
-  margin: 22px 0 0;
+  max-width: 48ch;
+  margin: 14px 0 0;
   color: var(--muted);
-  line-height: 1.85;
-  font-size: 1.02rem;
+  line-height: 1.7;
+  font-size: 0.98rem;
 }
 
 .hero-actions {
@@ -211,6 +203,25 @@ a {
 .button-primary {
   color: #fffaf5;
   background: var(--ink);
+}
+
+.private-manage-link {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 116px;
+  padding: 12px 16px;
+  border: 1px solid rgba(35, 26, 20, 0.12);
+  border-radius: 999px;
+  background: rgba(35, 26, 20, 0.9);
+  color: #fffaf5;
+  box-shadow: 0 18px 40px rgba(35, 26, 20, 0.18);
+  backdrop-filter: blur(14px);
+  font-size: 0.92rem;
 }
 
 .button-secondary {
@@ -253,8 +264,8 @@ a {
 }
 
 .section {
-  margin-top: 22px;
-  padding: 28px;
+  margin-top: 18px;
+  padding: 24px;
   border: 1px solid rgba(255, 255, 255, 0.64);
   border-radius: 36px;
   background: rgba(255, 251, 246, 0.54);
@@ -272,6 +283,32 @@ a {
   margin-top: 10px;
   max-width: 18ch;
   font-size: clamp(2rem, 3vw, 3.5rem);
+}
+
+.profile-summary {
+  max-width: 70ch;
+  margin: 16px 0 0;
+  color: var(--muted);
+  line-height: 1.8;
+  font-size: 1rem;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.profile-card {
+  padding: 24px;
+}
+
+.profile-list {
+  margin: 16px 0 0;
+  padding-left: 18px;
+  color: var(--ink);
+  line-height: 1.9;
 }
 
 .section-grid .section-heading h2,
@@ -387,6 +424,10 @@ a {
   margin-top: 26px;
 }
 
+.notes-grid-simple {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .note-card {
   padding: 22px;
   transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
@@ -400,6 +441,24 @@ a {
 .note-card a {
   display: inline-block;
   margin-top: 14px;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(143, 77, 46, 0.08);
+  color: var(--accent);
+  font-size: 0.86rem;
+  line-height: 1;
 }
 
 .story-link {
@@ -519,6 +578,10 @@ blockquote {
   line-height: 1.9;
 }
 
+.article-page .tag-row {
+  margin-top: 18px;
+}
+
 .article-body {
   display: grid;
   gap: 18px;
@@ -571,7 +634,8 @@ blockquote {
   .weekly-grid,
   .notes-grid,
   .featured-layout,
-  .article-layout {
+  .article-layout,
+  .profile-grid {
     grid-template-columns: 1fr;
   }
 
@@ -597,16 +661,10 @@ blockquote {
     border-radius: 28px;
   }
 
-  .topbar,
   .hero-content,
   .section {
     padding-left: 18px;
     padding-right: 18px;
-  }
-
-  .topbar {
-    flex-wrap: wrap;
-    padding-top: 18px;
   }
 
   .menu-toggle {
@@ -626,11 +684,11 @@ blockquote {
   }
 
   .hero-content {
-    padding-top: 28px;
+    padding-top: 24px;
   }
 
   .hero-copy h1 {
-    font-size: clamp(2.6rem, 15vw, 4.2rem);
+    font-size: clamp(2.35rem, 12vw, 3.4rem);
   }
 
   .section-heading,
@@ -649,5 +707,13 @@ blockquote {
 
   .note-card h3 {
     font-size: 1.5rem;
+  }
+
+  .private-manage-link {
+    right: 12px;
+    bottom: 12px;
+    min-width: 102px;
+    padding: 11px 14px;
+    font-size: 0.88rem;
   }
 }

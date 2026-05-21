@@ -6,158 +6,707 @@
     <title>查爾斯的生活空間｜寫作後台</title>
     <link rel="stylesheet" href="../styles.css" />
     <style>
-      .admin-shell { max-width: 980px; }
-      .admin-topbar { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
-      .admin-form { display: grid; gap: 18px; }
-      .admin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-      .admin-field { display: grid; gap: 8px; }
-      .admin-field label, .toolbar-label { color: var(--muted); font-size: 0.95rem; }
-      .admin-field input, .admin-field select, .admin-field textarea {
-        width: 100%;
-        padding: 14px 16px;
+      :root {
+        --studio-shell: 1280px;
+      }
+
+      body {
+        min-height: 100vh;
+      }
+
+      .studio-shell {
+        width: min(calc(100% - 28px), var(--studio-shell));
+        margin: 18px auto 28px;
+      }
+
+      .studio-app {
+        display: grid;
+        gap: 18px;
+      }
+
+      .studio-frame {
+        padding: 0;
+        overflow: hidden;
+      }
+
+      .studio-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 22px 24px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.28);
+      }
+
+      .studio-brand {
+        display: grid;
+        gap: 4px;
+      }
+
+      .studio-brand h1 {
+        margin: 0;
+        font-family: var(--font-display);
+        font-size: clamp(1.7rem, 2vw, 2.2rem);
+        line-height: 1.1;
+      }
+
+      .studio-subtitle {
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .studio-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+
+      .toolbar-chip,
+      .ghost-button,
+      .drawer-toggle {
+        padding: 10px 16px;
         border: 1px solid var(--line);
-        border-radius: 18px;
-        background: rgba(255, 255, 255, 0.72);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.76);
         color: var(--ink);
         font: inherit;
+        cursor: pointer;
       }
-      .admin-field textarea { min-height: 340px; resize: vertical; line-height: 1.8; }
-      .admin-actions, .toolbar, .image-tools { display: flex; flex-wrap: wrap; gap: 12px; }
-      .tool-button {
+
+      .toolbar-chip:hover,
+      .ghost-button:hover,
+      .drawer-toggle:hover {
+        transform: translateY(-1px);
+      }
+
+      .editor-stage {
+        display: grid;
+        grid-template-rows: auto auto 1fr auto auto;
+        min-width: 0;
+        min-height: 74vh;
+      }
+
+      .editor-head {
+        padding: 22px 24px 0;
+      }
+
+      .title-input {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        color: var(--ink);
+        font: inherit;
+        font-family: var(--font-display);
+        font-size: clamp(2.4rem, 3.6vw, 4rem);
+        line-height: 1.08;
+        outline: none;
+        padding: 0;
+      }
+
+      .title-input::placeholder {
+        color: rgba(89, 74, 63, 0.48);
+      }
+
+      .selection-toolbar {
+        position: fixed;
+        display: none;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        border: 1px solid rgba(64, 44, 26, 0.08);
+        border-radius: 18px;
+        background: rgba(255, 250, 244, 0.96);
+        box-shadow: 0 18px 40px rgba(52, 36, 25, 0.16);
+        backdrop-filter: blur(12px);
+        z-index: 40;
+      }
+
+      .selection-toolbar.is-visible {
+        display: inline-flex;
+      }
+
+      .selection-toolbar .tool-button {
         padding: 10px 14px;
         border: 1px solid var(--line);
         border-radius: 999px;
-        background: rgba(255, 255, 255, 0.75);
+        background: rgba(255, 255, 255, 0.72);
         color: var(--ink);
+        font: inherit;
         cursor: pointer;
+      }
+
+      .editor-pane {
+        margin: 0 24px 18px;
+        padding: 16px 18px;
+        border: 1px solid rgba(143, 77, 46, 0.16);
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.52);
+      }
+
+      .editor-pane.is-dragover {
+        border-color: var(--accent);
+        background: rgba(255, 247, 241, 0.84);
+        box-shadow: inset 0 0 0 1px rgba(143, 77, 46, 0.12);
+      }
+
+      .editor-hint {
+        margin: 0 24px 14px;
+        color: var(--muted);
+        font-size: 0.92rem;
+        line-height: 1.6;
+      }
+
+      .editor-body {
+        width: 100%;
+        min-height: 520px;
+        height: 100%;
+        border: 0;
+        background: transparent;
+        color: var(--ink);
+        font-size: 1.04rem;
+        line-height: 1.95;
+        font-weight: 360;
+        outline: none;
+        padding: 8px 0 0;
+        white-space: pre-wrap;
+      }
+
+      .editor-body[contenteditable="true"]:empty::before {
+        content: "從這裡開始寫。你也可以直接把圖片拖進來或貼上。";
+        color: rgba(89, 74, 63, 0.48);
+      }
+
+      .editor-body h1,
+      .editor-body h2,
+      .editor-body h3,
+      .editor-body blockquote,
+      .editor-body ul,
+      .editor-body ol,
+      .editor-body p {
+        margin: 0 0 1.1rem;
+      }
+
+      .editor-body h1,
+      .editor-body h2,
+      .editor-body h3 {
+        font-family: var(--font-display);
+        line-height: 1.2;
+        font-weight: 600;
+      }
+
+      .editor-body strong,
+      .editor-body b {
+        font-weight: 680;
+      }
+
+      .editor-body h1 {
+        font-size: 2.1rem;
+      }
+
+      .editor-body h2 {
+        font-size: 1.6rem;
+      }
+
+      .editor-body h3 {
+        font-size: 1.28rem;
+      }
+
+      .editor-body blockquote {
+        margin-left: 0;
+        padding-left: 18px;
+        border-left: 3px solid rgba(143, 77, 46, 0.22);
+        color: var(--muted);
+      }
+
+      .editor-body ul,
+      .editor-body ol {
+        padding-left: 1.35rem;
+      }
+
+      .editor-body a {
+        color: var(--accent);
+        text-decoration: underline;
+      }
+
+      .editor-body img {
+        display: block;
+        max-width: 100%;
+        border-radius: 18px;
+        margin: 1.2rem 0;
+      }
+
+      .studio-statusbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 14px 24px 18px;
+        border-top: 1px solid rgba(64, 44, 26, 0.08);
+      }
+
+      .status-text {
+        color: var(--muted);
+        font-size: 0.94rem;
+      }
+
+      .publish-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .side-panel {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: min(360px, 100vw);
+        height: 100vh;
+        padding: 22px 20px;
+        background: rgba(248, 241, 232, 0.96);
+        backdrop-filter: blur(18px);
+        border-left: 1px solid rgba(64, 44, 26, 0.08);
+        box-shadow: -20px 0 60px rgba(52, 36, 25, 0.12);
+        display: grid;
+        align-content: start;
+        gap: 14px;
+        transform: translateX(104%);
+        transition: transform 220ms ease;
+        z-index: 20;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .side-panel.is-open {
+        transform: translateX(0);
+      }
+
+      .drawer-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(34, 24, 18, 0.22);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 220ms ease;
+        z-index: 19;
+      }
+
+      .drawer-backdrop.is-open {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .drawer-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .drawer-head strong {
+        font-size: 1.02rem;
+      }
+
+      .drawer-close {
+        width: 42px;
+        height: 42px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        color: var(--ink);
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .panel-section {
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.55);
+        overflow: hidden;
+      }
+
+      .panel-toggle {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        color: var(--ink);
+        font: inherit;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px 18px;
+        cursor: pointer;
+      }
+
+      .panel-toggle strong {
+        font-size: 1rem;
+      }
+
+      .panel-toggle span {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .panel-body {
+        display: none;
+        gap: 14px;
+        padding: 0 18px 18px;
+      }
+
+      .panel-section.is-open .panel-body {
+        display: grid;
+      }
+
+      .library-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .library-tabs {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+
+      .library-tab {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        color: var(--muted);
+        padding: 10px 12px;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .library-tab.is-active {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: #fffaf5;
+      }
+
+      .library-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .library-card {
+        display: grid;
+        gap: 10px;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.78);
+      }
+
+      .library-card h3 {
+        margin: 0;
+        font-size: 1rem;
+        line-height: 1.35;
+      }
+
+      .library-meta {
+        color: var(--muted);
+        font-size: 0.86rem;
+        line-height: 1.6;
+      }
+
+      .library-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .mini-button {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.8);
+        color: var(--ink);
+        padding: 8px 12px;
+        font: inherit;
+        font-size: 0.88rem;
+        cursor: pointer;
+      }
+
+      .mini-button.is-danger {
+        color: #8a2f25;
+      }
+
+      .library-empty {
+        padding: 14px;
+        border: 1px dashed var(--line);
+        border-radius: 18px;
+        color: var(--muted);
+        font-size: 0.92rem;
+        line-height: 1.7;
+      }
+
+      .admin-field {
+        display: grid;
+        gap: 8px;
+      }
+
+      .admin-field label {
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .admin-field input,
+      .admin-field select,
+      .admin-field textarea {
+        width: 100%;
+        padding: 13px 15px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.78);
+        color: var(--ink);
         font: inherit;
       }
-      .image-tools input[type="file"] { max-width: 260px; }
-      .admin-note, .admin-result, .storage-note { color: var(--muted); line-height: 1.8; }
-      .admin-result a { color: var(--accent); }
-      .storage-box {
-        padding: 18px 20px;
-        border: 1px solid var(--line);
-        border-radius: 22px;
-        background: rgba(255, 255, 255, 0.5);
+
+      .admin-field textarea {
+        min-height: 96px;
+        resize: vertical;
+        line-height: 1.75;
       }
+
+      .field-hint {
+        margin: -2px 0 0;
+        color: var(--muted);
+        font-size: 0.84rem;
+        line-height: 1.6;
+      }
+
+      .compact-note {
+        color: var(--muted);
+        font-size: 0.88rem;
+        line-height: 1.7;
+      }
+
+      .desktop-hide {
+        display: none;
+      }
+
+      @media (max-width: 980px) {
+        .side-panel {
+          width: min(380px, 100vw);
+        }
+      }
+
       @media (max-width: 760px) {
-        .admin-grid, .admin-topbar { grid-template-columns: 1fr; display: grid; }
+        .studio-shell {
+          width: min(calc(100% - 14px), var(--studio-shell));
+          margin: 10px auto 18px;
+        }
+
+        .studio-topbar,
+        .editor-head,
+        .editor-toolbar,
+        .editor-pane,
+        .studio-statusbar,
+        .side-panel {
+          padding-left: 18px;
+          padding-right: 18px;
+        }
+
+        .studio-topbar {
+          padding-top: 18px;
+          padding-bottom: 18px;
+          align-items: start;
+        }
+
+        .studio-actions,
+        .publish-actions {
+          justify-content: flex-start;
+        }
+
+        .selection-toolbar .tool-button,
+        .ghost-button,
+        .drawer-toggle {
+          padding: 9px 13px;
+        }
+
+        .editor-hint {
+          margin-left: 18px;
+          margin-right: 18px;
+        }
+
+        .studio-statusbar {
+          align-items: start;
+          flex-direction: column;
+        }
+
+        .desktop-hide {
+          display: inline-flex;
+        }
       }
     </style>
   </head>
   <body>
-    <div class="page-shell admin-shell">
-      <section class="section">
-        <div class="admin-topbar">
-          <div>
-            <p class="eyebrow">Publishing Studio</p>
-            <h1 class="admin-title">查爾斯的生活空間｜寫作後台</h1>
+    <div class="page-shell studio-shell">
+      <section class="section studio-frame">
+        <div class="studio-app">
+          <header class="studio-topbar">
+            <div class="studio-brand">
+              <p class="eyebrow">Writing Studio</p>
+              <h1>查爾斯的生活空間</h1>
+              <span class="studio-subtitle">把注意力留給寫作，其他設定都收起來。</span>
+            </div>
+
+            <div class="studio-actions">
+              <button class="drawer-toggle" type="button" data-target="library-panel">我的文章</button>
+              <button class="drawer-toggle" type="button" data-target="meta-panel">文章設定</button>
+              <button class="drawer-toggle" type="button" data-target="repo-panel">連線設定</button>
+              <button class="button button-secondary" type="button" id="logout-button">登出</button>
+            </div>
+          </header>
+
+          <main class="editor-stage">
+              <div class="editor-head">
+                <input id="title" class="title-input" name="title" placeholder="輸入文章標題..." required />
+              </div>
+
+              <p class="editor-hint">直接在下方開始寫。圖片也可以直接拖進編輯器，或在裡面貼上。</p>
+
+              <div class="editor-pane">
+                <div
+                  id="body"
+                  class="editor-body"
+                  name="body"
+                  contenteditable="true"
+                  spellcheck="true"
+                ></div>
+              </div>
+
+              <div class="studio-statusbar">
+                <div class="status-text" id="admin-result">本機草稿會自動保存。</div>
+                <div class="publish-actions">
+                  <button class="ghost-button" type="button" id="load-local-draft-button">恢復草稿</button>
+                  <button class="ghost-button" type="button" id="load-draft-button">載入雲端草稿</button>
+                  <button class="button button-secondary" type="button" id="save-draft-button">儲存草稿</button>
+                  <button class="button button-primary" type="submit" form="admin-form">發佈文章</button>
+                </div>
+              </div>
+          </main>
+
+          <div class="drawer-backdrop" id="drawer-backdrop"></div>
+          <div class="selection-toolbar" id="selection-toolbar">
+            <button class="tool-button" type="button" data-insert="# ">H1</button>
+            <button class="tool-button" type="button" data-insert="## ">H2</button>
+            <button class="tool-button" type="button" data-wrap="**" data-placeholder="粗體文字">粗體</button>
+            <button class="tool-button" type="button" data-line-prefix="> ">引用</button>
+            <button class="tool-button" type="button" data-line-prefix="- ">清單</button>
+            <button class="tool-button" type="button" data-replace="[連結文字](https://)">連結</button>
           </div>
-          <button class="button button-secondary" type="button" id="logout-button">登出</button>
+
+          <aside class="side-panel" id="side-panel">
+              <div class="drawer-head">
+                <strong>編輯設定</strong>
+                <button class="drawer-close" type="button" id="drawer-close">×</button>
+              </div>
+              <form id="admin-form" class="desktop-hide"></form>
+
+              <section class="panel-section" id="library-panel">
+                <button class="panel-toggle" type="button" data-target="library-panel">
+                  <strong>文章管理</strong>
+                  <span>編輯、典藏、刪除</span>
+                </button>
+                <div class="panel-body">
+                  <div class="library-toolbar">
+                    <button class="mini-button" type="button" id="new-article-button">新增文章</button>
+                    <button class="mini-button" type="button" id="library-refresh">重新整理</button>
+                  </div>
+
+                  <div class="library-tabs">
+                    <button class="library-tab is-active" type="button" data-library-filter="posts">已發佈</button>
+                    <button class="library-tab" type="button" data-library-filter="drafts">草稿</button>
+                    <button class="library-tab" type="button" data-library-filter="archive">典藏</button>
+                  </div>
+
+                  <div class="library-list" id="library-list">
+                    <div class="library-empty">填好連線設定後，這裡會列出你的文章。</div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="panel-section is-open" id="meta-panel">
+                <button class="panel-toggle" type="button" data-target="meta-panel">
+                  <strong>文章設定</strong>
+                  <span>分類、日期、摘要、標籤</span>
+                </button>
+                <div class="panel-body">
+                  <div class="admin-field">
+                    <label for="date">日期</label>
+                    <input id="date" name="date" type="date" form="admin-form" required />
+                  </div>
+
+                  <div class="admin-field">
+                    <label for="category">分類</label>
+                    <input id="category" name="category" form="admin-form" list="category-options" placeholder="例如 生活、學習、旅遊、留學申請" required />
+                    <datalist id="category-options">
+                      <option value="生活"></option>
+                      <option value="學習"></option>
+                      <option value="旅遊"></option>
+                    </datalist>
+                    <p class="field-hint">可以直接輸入新的分類名稱，不用被固定選項限制。</p>
+                  </div>
+
+                  <div class="admin-field">
+                    <label for="slug">網址代稱</label>
+                    <input id="slug" name="slug" form="admin-form" placeholder="會依標題自動產生，可手改" />
+                  </div>
+
+                  <div class="admin-field">
+                    <label for="tags">Tags</label>
+                    <input id="tags" name="tags" form="admin-form" placeholder="例如 日本, AI, 留學, 生活觀察" />
+                  </div>
+
+                  <div class="admin-field">
+                    <label for="excerpt">文章摘要</label>
+                    <textarea id="excerpt" name="excerpt" form="admin-form" placeholder="寫一小段讓讀者快速理解這篇文章。"></textarea>
+                  </div>
+                </div>
+              </section>
+
+              <section class="panel-section" id="repo-panel">
+                <button class="panel-toggle" type="button" data-target="repo-panel">
+                  <strong>連線設定</strong>
+                  <span>只需要設定一次</span>
+                </button>
+                <div class="panel-body">
+                  <div class="admin-field">
+                    <label for="owner">GitHub 帳號</label>
+                    <input id="owner" name="owner" form="admin-form" placeholder="例如 charleschang0" />
+                  </div>
+
+                  <div class="admin-field">
+                    <label for="repo">Repo 名稱</label>
+                    <input id="repo" name="repo" form="admin-form" placeholder="例如 charles-life-space" />
+                  </div>
+
+                  <div class="admin-field">
+                    <label for="branch">Branch</label>
+                    <input id="branch" name="branch" form="admin-form" value="main" />
+                  </div>
+
+                  <div class="admin-field">
+                    <label for="token">GitHub Token</label>
+                    <input id="token" name="token" type="password" form="admin-form" placeholder="ghp_xxx" />
+                  </div>
+
+                  <button class="ghost-button" type="button" id="save-settings">記住連線設定</button>
+                  <p class="compact-note">
+                    這些資料平常不會出現在主畫面。第一次設定好之後，就能直接在這裡寫文與發佈。
+                  </p>
+                </div>
+              </section>
+          </aside>
         </div>
-
-        <p class="article-lead">
-          這裡的內容會直接寫進 GitHub repo。已發佈文章在 <code>content/posts</code>，
-          草稿在 <code>content/drafts</code>，圖片在 <code>public/uploads</code>。
-        </p>
-
-        <div class="storage-box">
-          <p class="storage-note">
-            已發佈文章：<code>content/posts/*.md</code><br />
-            草稿：<code>content/drafts/*.md</code><br />
-            圖片：<code>public/uploads/*</code>
-          </p>
-        </div>
-
-        <form class="admin-form" id="admin-form">
-          <div class="admin-grid">
-            <div class="admin-field">
-              <label for="owner">GitHub 帳號</label>
-              <input id="owner" name="owner" placeholder="例如 charles" required />
-            </div>
-            <div class="admin-field">
-              <label for="repo">Repo 名稱</label>
-              <input id="repo" name="repo" placeholder="例如 charles-life-space" required />
-            </div>
-            <div class="admin-field">
-              <label for="branch">Branch</label>
-              <input id="branch" name="branch" value="main" required />
-            </div>
-            <div class="admin-field">
-              <label for="token">GitHub Token</label>
-              <input id="token" name="token" type="password" placeholder="ghp_xxx" required />
-            </div>
-          </div>
-
-          <div class="admin-grid">
-            <div class="admin-field">
-              <label for="title">文章標題</label>
-              <input id="title" name="title" required />
-            </div>
-            <div class="admin-field">
-              <label for="date">日期</label>
-              <input id="date" name="date" type="date" required />
-            </div>
-            <div class="admin-field">
-              <label for="category">分類</label>
-              <select id="category" name="category" required>
-                <option value="life">生活</option>
-                <option value="study">學習</option>
-                <option value="travel">旅遊</option>
-              </select>
-            </div>
-            <div class="admin-field">
-              <label for="slug">Slug</label>
-              <input id="slug" name="slug" placeholder="會依標題自動產生，可手改" />
-            </div>
-          </div>
-
-          <div class="admin-field">
-            <label for="excerpt">文章摘要</label>
-            <textarea id="excerpt" name="excerpt" rows="4" style="min-height: 110px;"></textarea>
-          </div>
-
-          <div class="admin-field">
-            <span class="toolbar-label">寫作工具</span>
-            <div class="toolbar">
-              <button class="tool-button" type="button" data-insert="# ">H1</button>
-              <button class="tool-button" type="button" data-insert="## ">H2</button>
-              <button class="tool-button" type="button" data-wrap="**" data-placeholder="粗體文字">粗體</button>
-              <button class="tool-button" type="button" data-line-prefix="> ">引用</button>
-              <button class="tool-button" type="button" data-line-prefix="- ">清單</button>
-              <button class="tool-button" type="button" data-replace="[連結文字](https://)">連結</button>
-            </div>
-          </div>
-
-          <div class="admin-field">
-            <label for="body">文章內容（Markdown）</label>
-            <textarea id="body" name="body" placeholder="# 小標&#10;&#10;正文寫在這裡" required></textarea>
-          </div>
-
-          <div class="admin-field">
-            <span class="toolbar-label">圖片插入</span>
-            <div class="image-tools">
-              <input id="image-file" type="file" accept="image/*" />
-              <button class="tool-button" type="button" id="upload-image-button">上傳圖片並插入</button>
-            </div>
-          </div>
-
-          <div class="admin-actions">
-            <button class="button button-secondary" type="button" id="load-local-draft-button">恢復本機草稿</button>
-            <button class="button button-secondary" type="button" id="load-draft-button">載入雲端草稿</button>
-            <button class="button button-secondary" type="button" id="save-draft-button">儲存草稿</button>
-            <button class="button button-secondary" type="button" id="save-settings">記住 Repo 設定</button>
-            <button class="button button-primary" type="submit">發佈文章</button>
-          </div>
-        </form>
-
-        <p class="admin-note">
-          這個後台會自動把表單內容暫存在本機，避免你下次回來時從零開始。
-          按下「儲存草稿」後，還會同步存一份到 GitHub 的 <code>content/drafts</code>。
-        </p>
-
-        <div class="admin-result" id="admin-result"></div>
       </section>
     </div>
 
@@ -195,23 +744,47 @@
       const form = document.querySelector("#admin-form");
       const result = document.querySelector("#admin-result");
       const bodyField = document.querySelector("#body");
+      const titleField = document.querySelector("#title");
       const saveSettingsButton = document.querySelector("#save-settings");
       const saveDraftButton = document.querySelector("#save-draft-button");
       const loadDraftButton = document.querySelector("#load-draft-button");
       const loadLocalDraftButton = document.querySelector("#load-local-draft-button");
-      const uploadImageButton = document.querySelector("#upload-image-button");
-      const imageFileInput = document.querySelector("#image-file");
       const logoutButton = document.querySelector("#logout-button");
+      const editorPane = document.querySelector(".editor-pane");
+      const sidePanel = document.querySelector("#side-panel");
+      const drawerBackdrop = document.querySelector("#drawer-backdrop");
+      const drawerCloseButton = document.querySelector("#drawer-close");
+      const selectionToolbar = document.querySelector("#selection-toolbar");
+      const libraryList = document.querySelector("#library-list");
+      const libraryRefreshButton = document.querySelector("#library-refresh");
+      const newArticleButton = document.querySelector("#new-article-button");
+      const libraryTabs = document.querySelectorAll("[data-library-filter]");
+      let savedRange = null;
+      let currentEntry = null;
+      let libraryFilter = "posts";
+
+      const contentFolders = {
+        posts: "content/posts",
+        drafts: "content/drafts",
+        archive: "content/archive"
+      };
+
+      const contentLabels = {
+        posts: "已發佈",
+        drafts: "草稿",
+        archive: "典藏"
+      };
 
       const fields = {
         owner: document.querySelector("#owner"),
         repo: document.querySelector("#repo"),
         branch: document.querySelector("#branch"),
         token: document.querySelector("#token"),
-        title: document.querySelector("#title"),
+        title: titleField,
         date: document.querySelector("#date"),
         category: document.querySelector("#category"),
         slug: document.querySelector("#slug"),
+        tags: document.querySelector("#tags"),
         excerpt: document.querySelector("#excerpt"),
         body: bodyField
       };
@@ -222,30 +795,121 @@
 
       hydrateSettings();
       if (!fields.date.value) fields.date.value = new Date().toISOString().slice(0, 10);
+      hydrateLocalDraft(true);
+      if (params.get("panel") === "library") {
+        openPanel("library-panel");
+      }
 
-      fields.title.addEventListener("input", () => {
-        if (!fields.slug.dataset.editedManually) fields.slug.value = slugify(fields.title.value);
+      titleField.addEventListener("input", () => {
+        if (!fields.slug.dataset.editedManually) fields.slug.value = slugify(titleField.value);
       });
       fields.slug.addEventListener("input", () => { fields.slug.dataset.editedManually = "true"; });
       Object.values(fields).forEach((field) => field.addEventListener("input", queueAutosave));
+      [fields.owner, fields.repo, fields.branch, fields.token].forEach((field) => {
+        field.addEventListener("input", persistSettingsSilently);
+        field.addEventListener("change", persistSettingsSilently);
+      });
 
       document.querySelectorAll(".tool-button[data-insert], .tool-button[data-wrap], .tool-button[data-line-prefix], .tool-button[data-replace]").forEach((button) => {
-        button.addEventListener("click", () => {
-          if (button.dataset.wrap) wrapSelection(button.dataset.wrap, button.dataset.placeholder || "文字");
-          else if (button.dataset.linePrefix) insertLinePrefix(button.dataset.linePrefix);
-          else if (button.dataset.replace) replaceSelection(button.dataset.replace);
-          else if (button.dataset.insert) insertAtCursor(`\n${button.dataset.insert}`);
+        button.addEventListener("mousedown", (event) => {
+          event.preventDefault();
+          restoreSavedRange();
+          if (button.dataset.wrap) {
+            applyInlineFormat(button.dataset.wrap, button.dataset.placeholder || "文字");
+          } else if (button.dataset.linePrefix) {
+            applyBlockFormat(button.dataset.linePrefix);
+          } else if (button.dataset.replace) {
+            applyLink();
+          } else if (button.dataset.insert) {
+            applyHeading(button.dataset.insert.trim());
+          }
+          queueAutosave();
+          updateSelectionToolbar();
         });
       });
 
+      document.querySelectorAll(".drawer-toggle, .panel-toggle").forEach((button) => {
+        button.addEventListener("click", () => {
+          openPanel(button.dataset.target);
+        });
+      });
+
+      libraryTabs.forEach((button) => {
+        button.addEventListener("click", () => {
+          libraryFilter = button.dataset.libraryFilter;
+          updateLibraryTabs();
+          loadLibrary();
+        });
+      });
+
+      drawerCloseButton.addEventListener("click", closeDrawer);
+      drawerBackdrop.addEventListener("click", closeDrawer);
+
       saveSettingsButton.addEventListener("click", () => {
         persistSettings();
-        renderMessage("已記住目前的 GitHub 設定。", false);
+        renderMessage("已記住連線設定。", false);
+      });
+
+      libraryRefreshButton.addEventListener("click", () => {
+        loadLibrary(true);
+      });
+
+      newArticleButton.addEventListener("click", () => {
+        currentEntry = null;
+        fields.slug.dataset.editedManually = "";
+        fillForm({
+          owner: fields.owner.value.trim(),
+          repo: fields.repo.value.trim(),
+          branch: fields.branch.value.trim(),
+          token: fields.token.value.trim(),
+          title: "",
+          date: new Date().toISOString().slice(0, 10),
+          category: "生活",
+          slug: "",
+          tags: [],
+          excerpt: "",
+          body: ""
+        });
+        closeDrawer();
+        renderMessage("已切換成新文章。", false);
+      });
+
+      libraryList.addEventListener("click", async (event) => {
+        const button = event.target.closest("[data-library-action]");
+        if (!button) return;
+        const { libraryAction, path: targetPath, kind, slug } = button.dataset;
+        if (!targetPath || !kind) return;
+
+        const payload = getPayload();
+        if (!hasRepoConfig(payload)) {
+          renderMessage("請先在連線設定填好 GitHub 資訊。", true);
+          openPanel("repo-panel");
+          return;
+        }
+
+        if (libraryAction === "edit") {
+          await loadEntryIntoEditor({ kind, path: targetPath, slug });
+          return;
+        }
+
+        if (libraryAction === "archive") {
+          await archiveEntry({ kind, path: targetPath, slug });
+          return;
+        }
+
+        if (libraryAction === "restore") {
+          await restoreEntry({ kind, path: targetPath, slug });
+          return;
+        }
+
+        if (libraryAction === "delete") {
+          await deleteEntry({ kind, path: targetPath, slug });
+        }
       });
 
       loadLocalDraftButton.addEventListener("click", () => {
-        if (!hydrateLocalDraft()) {
-          renderMessage("目前沒有本機草稿可恢復。", true);
+        if (!hydrateLocalDraft(false)) {
+          renderMessage("目前沒有可恢復的本機草稿。", true);
           return;
         }
         renderMessage("已恢復本機草稿。", false);
@@ -254,22 +918,35 @@
       saveDraftButton.addEventListener("click", async () => {
         const payload = getPayload();
         if (!payload.slug) {
-          renderMessage("請先填寫標題或 slug，才能存成草稿。", true);
+          renderMessage("請先填寫標題，才能存成草稿。", true);
           return;
         }
         saveLocalDraft(payload);
         if (!hasRepoConfig(payload)) {
-          renderMessage("草稿已存在本機；填好 repo 設定後可再同步到 GitHub。", false);
+          renderMessage("草稿已存在本機。若要同步到雲端，再打開連線設定補上 GitHub 資訊。", false);
           return;
         }
         try {
+          const targetPath = `content/drafts/${payload.slug}.md`;
           await upsertContent({
             payload,
-            targetPath: `content/drafts/${payload.slug}.md`,
+            targetPath,
             commitMessage: `Save draft: ${payload.title || payload.slug}`,
             content: createMarkdown(payload)
           });
-          renderMessage("草稿已同步到 GitHub 的 content/drafts。", false);
+          if (currentEntry?.kind === "drafts" && currentEntry.path !== targetPath) {
+            await deleteContent({
+              owner: payload.owner,
+              repo: payload.repo,
+              branch: payload.branch,
+              token: payload.token,
+              targetPath: currentEntry.path,
+              commitMessage: `Cleanup old draft: ${currentEntry.slug || payload.slug}`
+            });
+          }
+          currentEntry = { kind: "drafts", path: targetPath, slug: payload.slug };
+          maybeRefreshLibrary();
+          renderMessage("草稿已同步到 GitHub。", false);
         } catch (error) {
           renderMessage(`雲端草稿保存失敗：${error.message}`, true);
         }
@@ -278,11 +955,13 @@
       loadDraftButton.addEventListener("click", async () => {
         const payload = getPayload();
         if (!payload.slug) {
-          renderMessage("請先填寫 slug，才能載入對應草稿。", true);
+          renderMessage("請先輸入標題或 slug，才能載入雲端草稿。", true);
           return;
         }
         if (!hasRepoConfig(payload)) {
-          renderMessage("請先填 repo 設定，才能載入雲端草稿。", true);
+          renderMessage("請先在連線設定填好 GitHub 資訊。", true);
+          document.getElementById("repo-panel").classList.add("is-open");
+          openDrawer();
           return;
         }
         try {
@@ -294,41 +973,12 @@
             targetPath: `content/drafts/${payload.slug}.md`
           });
           const parsed = parseMarkdownFile(data.content);
+          currentEntry = { kind: "drafts", path: `content/drafts/${payload.slug}.md`, slug: payload.slug };
           fillForm({ ...payload, slug: payload.slug, ...parsed });
           saveLocalDraft(getPayload());
           renderMessage("已載入雲端草稿。", false);
         } catch (error) {
           renderMessage(`載入草稿失敗：${error.message}`, true);
-        }
-      });
-
-      uploadImageButton.addEventListener("click", async () => {
-        const file = imageFileInput.files[0];
-        const payload = getPayload();
-        if (!file) {
-          renderMessage("請先選擇一張圖片。", true);
-          return;
-        }
-        if (!hasRepoConfig(payload)) {
-          renderMessage("要上傳圖片前，請先填 GitHub 帳號、repo、branch 和 token。", true);
-          return;
-        }
-        try {
-          renderMessage("圖片上傳中...", false);
-          const safeName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]+/g, "-")}`;
-          await upsertRawContent({
-            owner: payload.owner,
-            repo: payload.repo,
-            branch: payload.branch,
-            token: payload.token,
-            targetPath: `public/uploads/${safeName}`,
-            commitMessage: `Upload image: ${safeName}`,
-            content: await fileToBase64(file)
-          });
-          insertAtCursor(`\n![${file.name.replace(/\.[^.]+$/, "")}](../uploads/${safeName})\n`);
-          renderMessage("圖片已上傳並插入文章。", false);
-        } catch (error) {
-          renderMessage(`圖片上傳失敗：${error.message}`, true);
         }
       });
 
@@ -345,23 +995,93 @@
           return;
         }
         if (!hasRepoConfig(payload)) {
-          renderMessage("要發佈文章前，請先填 GitHub 帳號、repo、branch 和 token。", true);
+          renderMessage("發佈前請先完成連線設定。", true);
+          document.getElementById("repo-panel").classList.add("is-open");
+          openDrawer();
           return;
         }
         persistSettings();
         saveLocalDraft(payload);
         try {
-          renderMessage("發佈中，正在把文章寫進 GitHub repo...", false);
+          renderMessage("發佈中...", false);
+          const targetPath = `content/posts/${payload.slug}.md`;
           await upsertContent({
             payload,
-            targetPath: `content/posts/${payload.slug}.md`,
+            targetPath,
             commitMessage: `Publish post: ${payload.title}`,
             content: createMarkdown(payload)
           });
-          renderMessage("文章已發佈，內容已存進 GitHub 的 content/posts。", false);
+          if (currentEntry?.path && currentEntry.path !== targetPath) {
+            await deleteContent({
+              owner: payload.owner,
+              repo: payload.repo,
+              branch: payload.branch,
+              token: payload.token,
+              targetPath: currentEntry.path,
+              commitMessage: `Move article after publish: ${payload.title || payload.slug}`
+            });
+          }
+          currentEntry = { kind: "posts", path: targetPath, slug: payload.slug };
+          maybeRefreshLibrary();
+          const publishedUrl = buildPublishedUrl(payload);
+          const githubUrl = buildGitHubPostUrl(payload);
+          const actionsUrl = buildActionsUrl(payload);
+          renderMessage(
+            `文章已寫進 GitHub。前端頁面要等 GitHub Pages 部署完成才會出現，剛發佈立刻打開有可能先看到 404。<br><a href="${escapeAttribute(githubUrl)}" target="_blank" rel="noreferrer">查看 GitHub 文章檔</a><br><a href="${escapeAttribute(actionsUrl)}" target="_blank" rel="noreferrer">查看部署進度</a><br><a href="${escapeAttribute(publishedUrl)}" target="_blank" rel="noreferrer">查看前端文章頁</a>`,
+            false,
+            true
+          );
         } catch (error) {
           renderMessage(`發佈失敗：${error.message}`, true);
         }
+      });
+
+      bodyField.addEventListener("paste", async (event) => {
+        const file = getImageFromClipboard(event.clipboardData);
+        if (!file) return;
+        event.preventDefault();
+        await uploadImageFromFile(file);
+      });
+
+      bodyField.addEventListener("mouseup", updateSelectionToolbar);
+      bodyField.addEventListener("keyup", updateSelectionToolbar);
+      bodyField.addEventListener("focus", updateSelectionToolbar);
+      document.addEventListener("selectionchange", () => {
+        if (document.activeElement === bodyField || bodyField.contains(document.activeElement)) {
+          updateSelectionToolbar();
+        } else if (!selectionToolbar.matches(":hover")) {
+          hideSelectionToolbar();
+        }
+      });
+      document.addEventListener("mousedown", (event) => {
+        if (!selectionToolbar.contains(event.target) && !bodyField.contains(event.target)) {
+          hideSelectionToolbar();
+        }
+      });
+
+      [editorPane, bodyField].forEach((dropTarget) => {
+        ["dragenter", "dragover"].forEach((type) => {
+          dropTarget.addEventListener(type, (event) => {
+            event.preventDefault();
+            editorPane.classList.add("is-dragover");
+          });
+        });
+
+        ["dragleave", "dragend", "drop"].forEach((type) => {
+          dropTarget.addEventListener(type, () => {
+            editorPane.classList.remove("is-dragover");
+          });
+        });
+
+        dropTarget.addEventListener("drop", async (event) => {
+          event.preventDefault();
+          const file = getImageFromDataTransfer(event.dataTransfer);
+          if (!file) {
+            renderMessage("請拖曳圖片檔。", true);
+            return;
+          }
+          await uploadImageFromFile(file);
+        });
       });
 
       function queueAutosave() {
@@ -376,11 +1096,12 @@
         try { localStorage.setItem(localDraftKey, JSON.stringify(payload)); } catch {}
       }
 
-      function hydrateLocalDraft() {
+      function hydrateLocalDraft(isSilent) {
         try {
           const raw = localStorage.getItem(localDraftKey);
           if (!raw) return false;
           fillForm(JSON.parse(raw));
+          if (!isSilent) renderMessage("已恢復本機草稿。", false);
           return true;
         } catch {
           return false;
@@ -396,6 +1117,10 @@
             token: fields.token.value.trim()
           }));
         } catch {}
+      }
+
+      function persistSettingsSilently() {
+        persistSettings();
       }
 
       function hydrateSettings() {
@@ -420,8 +1145,12 @@
           date: fields.date.value.trim(),
           category: fields.category.value,
           slug: (fields.slug.value.trim() || slugify(fields.title.value)).replace(/\.md$/i, ""),
+          tags: parseTags(fields.tags.value),
           excerpt: fields.excerpt.value.trim(),
-          body: fields.body.value.trim()
+          currentPath: currentEntry?.path || "",
+          currentKind: currentEntry?.kind || "",
+          body: htmlToMarkdown(bodyField.innerHTML),
+          bodyHtml: bodyField.innerHTML.trim()
         };
       }
 
@@ -432,10 +1161,243 @@
         fields.token.value = payload.token || fields.token.value;
         fields.title.value = payload.title || "";
         fields.date.value = payload.date || new Date().toISOString().slice(0, 10);
-        fields.category.value = payload.category || "life";
+        fields.category.value = payload.category || "生活";
         fields.slug.value = payload.slug || "";
+        fields.tags.value = Array.isArray(payload.tags) ? payload.tags.join(", ") : payload.tags || "";
         fields.excerpt.value = payload.excerpt || "";
-        fields.body.value = payload.body || "";
+        fields.body.innerHTML = payload.bodyHtml || markdownToHtml(payload.body || "");
+        currentEntry = payload.currentPath
+          ? {
+              path: payload.currentPath,
+              kind: payload.currentKind || inferKindFromPath(payload.currentPath),
+              slug: payload.slug || ""
+            }
+          : currentEntry;
+      }
+
+      async function loadLibrary(forceOpen = false) {
+        const payload = getPayload();
+        if (!hasRepoConfig(payload)) {
+          libraryList.innerHTML = `<div class="library-empty">先到連線設定填好 GitHub 帳號、repo、branch 和 token，這裡才會載入文章。</div>`;
+          return;
+        }
+
+        if (forceOpen) openPanel("library-panel");
+        renderLibraryLoading();
+
+        try {
+          const items = await listEntriesByKind(libraryFilter, payload);
+          renderLibraryItems(items, libraryFilter);
+        } catch (error) {
+          libraryList.innerHTML = `<div class="library-empty">載入文章失敗：${escapeHtml(error.message)}</div>`;
+        }
+      }
+
+      async function listEntriesByKind(kind, payload) {
+        const entries = await getDirectoryContents({
+          owner: payload.owner,
+          repo: payload.repo,
+          branch: payload.branch,
+          token: payload.token,
+          targetPath: contentFolders[kind],
+          allowMissing: true
+        });
+
+        const markdownFiles = entries
+          .filter((entry) => entry.type === "file" && entry.name.endsWith(".md"))
+          .sort((a, b) => a.name.localeCompare(b.name));
+
+        const items = await Promise.all(markdownFiles.map(async (entry) => {
+          const file = await getContent({
+            owner: payload.owner,
+            repo: payload.repo,
+            branch: payload.branch,
+            token: payload.token,
+            targetPath: entry.path
+          });
+          const parsed = parseMarkdownFile(file.content);
+          return {
+            kind,
+            path: entry.path,
+            slug: entry.name.replace(/\.md$/i, ""),
+            title: parsed.title || entry.name.replace(/\.md$/i, ""),
+            date: parsed.date || "",
+            category: parsed.category || "",
+            tags: parsed.tags || [],
+            excerpt: parsed.excerpt || "",
+            body: parsed.body || ""
+          };
+        }));
+
+        return items.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+      }
+
+      function renderLibraryLoading() {
+        libraryList.innerHTML = `<div class="library-empty">正在載入${contentLabels[libraryFilter]}文章...</div>`;
+      }
+
+      function renderLibraryItems(items, kind) {
+        updateLibraryTabs();
+        if (!items.length) {
+          libraryList.innerHTML = `<div class="library-empty">目前沒有${contentLabels[kind]}文章。</div>`;
+          return;
+        }
+
+        libraryList.innerHTML = items.map((item) => {
+          const secondaryAction = kind === "archive"
+            ? `<button class="mini-button" type="button" data-library-action="restore" data-kind="${kind}" data-path="${escapeAttribute(item.path)}" data-slug="${escapeAttribute(item.slug)}">還原</button>`
+            : `<button class="mini-button" type="button" data-library-action="archive" data-kind="${kind}" data-path="${escapeAttribute(item.path)}" data-slug="${escapeAttribute(item.slug)}">典藏</button>`;
+
+          return `
+            <article class="library-card">
+              <div>
+                <h3>${escapeHtml(item.title)}</h3>
+                <div class="library-meta">${escapeHtml(item.category || "未分類")} / ${escapeHtml(item.date || "未設定日期")} / ${contentLabels[kind]}</div>
+              </div>
+              ${item.excerpt ? `<div class="library-meta">${escapeHtml(item.excerpt)}</div>` : ""}
+              <div class="library-actions">
+                <button class="mini-button" type="button" data-library-action="edit" data-kind="${kind}" data-path="${escapeAttribute(item.path)}" data-slug="${escapeAttribute(item.slug)}">編輯</button>
+                ${secondaryAction}
+                <button class="mini-button is-danger" type="button" data-library-action="delete" data-kind="${kind}" data-path="${escapeAttribute(item.path)}" data-slug="${escapeAttribute(item.slug)}">刪除</button>
+              </div>
+            </article>
+          `;
+        }).join("");
+      }
+
+      function updateLibraryTabs() {
+        libraryTabs.forEach((button) => {
+          button.classList.toggle("is-active", button.dataset.libraryFilter === libraryFilter);
+        });
+      }
+
+      async function loadEntryIntoEditor(entry) {
+        const payload = getPayload();
+        try {
+          const file = await getContent({
+            owner: payload.owner,
+            repo: payload.repo,
+            branch: payload.branch,
+            token: payload.token,
+            targetPath: entry.path
+          });
+          const parsed = parseMarkdownFile(file.content);
+          currentEntry = entry;
+          fields.slug.dataset.editedManually = "true";
+          fillForm({ ...payload, slug: entry.slug, ...parsed });
+          saveLocalDraft(getPayload());
+          closeDrawer();
+          renderMessage(`已載入${contentLabels[entry.kind]}文章：${parsed.title || entry.slug}`, false);
+        } catch (error) {
+          renderMessage(`載入文章失敗：${error.message}`, true);
+        }
+      }
+
+      async function archiveEntry(entry) {
+        const payload = getPayload();
+        const destinationPath = `content/archive/${entry.slug}.md`;
+        try {
+          renderMessage("典藏中...", false);
+          await moveContent({
+            owner: payload.owner,
+            repo: payload.repo,
+            branch: payload.branch,
+            token: payload.token,
+            sourcePath: entry.path,
+            destinationPath,
+            commitMessage: `Archive article: ${entry.slug}`
+          });
+          if (currentEntry?.path === entry.path) {
+            currentEntry = { kind: "archive", path: destinationPath, slug: entry.slug };
+          }
+          await loadLibrary();
+          renderMessage("文章已移到典藏。", false);
+        } catch (error) {
+          renderMessage(`典藏失敗：${error.message}`, true);
+        }
+      }
+
+      async function restoreEntry(entry) {
+        const payload = getPayload();
+        const destinationPath = `content/posts/${entry.slug}.md`;
+        try {
+          renderMessage("還原中...", false);
+          await moveContent({
+            owner: payload.owner,
+            repo: payload.repo,
+            branch: payload.branch,
+            token: payload.token,
+            sourcePath: entry.path,
+            destinationPath,
+            commitMessage: `Restore article: ${entry.slug}`
+          });
+          if (currentEntry?.path === entry.path) {
+            currentEntry = { kind: "posts", path: destinationPath, slug: entry.slug };
+          }
+          await loadLibrary();
+          renderMessage("文章已還原到已發佈。", false);
+        } catch (error) {
+          renderMessage(`還原失敗：${error.message}`, true);
+        }
+      }
+
+      async function deleteEntry(entry) {
+        const confirmed = window.confirm(`確定要刪除「${entry.slug}」嗎？這個動作不能自動復原。`);
+        if (!confirmed) return;
+
+        const payload = getPayload();
+        try {
+          renderMessage("刪除中...", false);
+          await deleteContent({
+            owner: payload.owner,
+            repo: payload.repo,
+            branch: payload.branch,
+            token: payload.token,
+            targetPath: entry.path,
+            commitMessage: `Delete article: ${entry.slug}`
+          });
+          if (currentEntry?.path === entry.path) {
+            currentEntry = null;
+          }
+          await loadLibrary();
+          renderMessage("文章已刪除。", false);
+        } catch (error) {
+          renderMessage(`刪除失敗：${error.message}`, true);
+        }
+      }
+
+      function maybeRefreshLibrary() {
+        if (sidePanel.classList.contains("is-open") && document.getElementById("library-panel").classList.contains("is-open")) {
+          loadLibrary();
+        }
+      }
+
+      async function uploadImageFromFile(file) {
+        const payload = getPayload();
+        if (!hasRepoConfig(payload)) {
+          renderMessage("插入圖片前，請先在連線設定完成 GitHub 資訊。", true);
+          document.getElementById("repo-panel").classList.add("is-open");
+          openDrawer();
+          return;
+        }
+        try {
+          renderMessage("圖片上傳中...", false);
+          const safeName = `${Date.now()}-${(file.name || "image.png").replace(/[^a-zA-Z0-9._-]+/g, "-")}`;
+          await upsertRawContent({
+            owner: payload.owner,
+            repo: payload.repo,
+            branch: payload.branch,
+            token: payload.token,
+            targetPath: `public/uploads/${safeName}`,
+            commitMessage: `Upload image: ${safeName}`,
+            content: await fileToBase64(file)
+          });
+          insertImageAtSelection(`../uploads/${safeName}`, (file.name || "image").replace(/\.[^.]+$/, ""));
+          saveLocalDraft(getPayload());
+          renderMessage("圖片已插入文章。", false);
+        } catch (error) {
+          renderMessage(`圖片上傳失敗：${error.message}`, true);
+        }
       }
 
       async function upsertContent({ payload, targetPath, commitMessage, content }) {
@@ -489,6 +1451,68 @@
         return { sha: data.sha, content: data.content ? decodeBase64(data.content) : "" };
       }
 
+      async function getDirectoryContents({ owner, repo, branch, token, targetPath, allowMissing = false }) {
+        const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${targetPath}?ref=${encodeURIComponent(branch)}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/vnd.github+json"
+          }
+        });
+        if (allowMissing && response.status === 404) return [];
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}));
+          throw new Error(error.message || `GitHub API error: ${response.status}`);
+        }
+        const data = await response.json();
+        return Array.isArray(data) ? data : [];
+      }
+
+      async function deleteContent({ owner, repo, branch, token, targetPath, commitMessage }) {
+        const existing = await getContent({ owner, repo, branch, token, targetPath, allowMissing: true });
+        if (!existing?.sha) return;
+        const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${targetPath}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/vnd.github+json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message: commitMessage,
+            sha: existing.sha,
+            branch
+          })
+        });
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}));
+          throw new Error(error.message || `GitHub API error: ${response.status}`);
+        }
+        return response.json();
+      }
+
+      async function moveContent({ owner, repo, branch, token, sourcePath, destinationPath, commitMessage }) {
+        const source = await getContent({ owner, repo, branch, token, targetPath: sourcePath });
+        await upsertRawContent({
+          owner,
+          repo,
+          branch,
+          token,
+          targetPath: destinationPath,
+          commitMessage,
+          content: toBase64(source.content)
+        });
+        if (sourcePath !== destinationPath) {
+          await deleteContent({
+            owner,
+            repo,
+            branch,
+            token,
+            targetPath: sourcePath,
+            commitMessage
+          });
+        }
+      }
+
       function parseMarkdownFile(source) {
         const match = source.match(/^---\n([\s\S]*?)\n---\n\n?([\s\S]*)$/);
         if (!match) return { body: source };
@@ -501,53 +1525,293 @@
         return {
           title: meta.title || "",
           date: meta.date || "",
-          category: meta.category || "life",
+          category: meta.category || "生活",
+          tags: parseTags(meta.tags || ""),
           excerpt: meta.excerpt || "",
           body: match[2] || ""
         };
       }
 
       function createMarkdown(payload) {
-        return `---\ntitle: ${payload.title}\ndate: ${payload.date}\ncategory: ${payload.category}\nexcerpt: ${payload.excerpt}\n---\n\n${payload.body}\n`;
+        const tagsLine = payload.tags.length ? `\ntags: ${payload.tags.join(", ")}` : "";
+        return `---\ntitle: ${payload.title}\ndate: ${payload.date}\ncategory: ${payload.category}${tagsLine}\nexcerpt: ${payload.excerpt}\n---\n\n${payload.body}\n`;
       }
 
       function hasRepoConfig(payload) {
         return payload.owner && payload.repo && payload.branch && payload.token;
       }
 
+      function buildPublishedUrl(payload) {
+        const repoSegment = payload.repo === `${payload.owner}.github.io`
+          ? ""
+          : `/${encodeURIComponent(payload.repo)}`;
+        return `https://${payload.owner}.github.io${repoSegment}/posts/${encodeURIComponent(payload.slug)}.html`;
+      }
+
+      function buildGitHubPostUrl(payload) {
+        return `https://github.com/${encodeURIComponent(payload.owner)}/${encodeURIComponent(payload.repo)}/blob/${encodeURIComponent(payload.branch)}/content/posts/${encodeURIComponent(payload.slug)}.md`;
+      }
+
+      function buildActionsUrl(payload) {
+        return `https://github.com/${encodeURIComponent(payload.owner)}/${encodeURIComponent(payload.repo)}/actions`;
+      }
+
+      function inferKindFromPath(targetPath) {
+        if (targetPath.startsWith("content/drafts/")) return "drafts";
+        if (targetPath.startsWith("content/archive/")) return "archive";
+        return "posts";
+      }
+
       function slugify(value) {
-        return value.toLowerCase().trim().replace(/[\s_]+/g, "-").replace(/[^a-z0-9-\u4e00-\u9fa5]+/g, "").replace(/-+/g, "-").replace(/^-|-$/g, "");
+        return value
+          .toLowerCase()
+          .trim()
+          .replace(/[\s_]+/g, "-")
+          .replace(/[^a-z0-9-\u4e00-\u9fa5]+/g, "")
+          .replace(/-+/g, "-")
+          .replace(/^-|-$/g, "");
       }
 
-      function wrapSelection(wrapper, placeholder) {
-        const start = bodyField.selectionStart;
-        const end = bodyField.selectionEnd;
-        const selected = bodyField.value.slice(start, end) || placeholder;
-        bodyField.setRangeText(`${wrapper}${selected}${wrapper}`, start, end, "end");
-        bodyField.focus();
+      function parseTags(value) {
+        return String(value || "")
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean);
       }
 
-      function replaceSelection(replacement) {
-        const start = bodyField.selectionStart;
-        const end = bodyField.selectionEnd;
-        const selected = bodyField.value.slice(start, end);
-        bodyField.setRangeText(replacement.replace("連結文字", selected || "連結文字"), start, end, "end");
+      function applyHeading(type) {
         bodyField.focus();
+        document.execCommand("formatBlock", false, type === "#" ? "h1" : "h2");
       }
 
-      function insertLinePrefix(prefix) {
-        const start = bodyField.selectionStart;
-        const end = bodyField.selectionEnd;
-        const selected = bodyField.value.slice(start, end);
-        bodyField.setRangeText(`${prefix}${selected}`, start, end, "end");
+      function applyInlineFormat(wrapper, placeholder) {
         bodyField.focus();
+        if (wrapper === "**") {
+          const selection = window.getSelection();
+          if (!selection || selection.isCollapsed) {
+            document.execCommand("insertText", false, placeholder);
+            const range = window.getSelection().getRangeAt(0);
+            range.setStart(range.endContainer, Math.max(0, range.endOffset - placeholder.length));
+            range.setEnd(range.endContainer, range.endOffset);
+          }
+          document.execCommand("bold");
+        }
       }
 
-      function insertAtCursor(text) {
-        const start = bodyField.selectionStart;
-        const end = bodyField.selectionEnd;
-        bodyField.setRangeText(text, start, end, "end");
+      function applyBlockFormat(prefix) {
         bodyField.focus();
+        if (prefix === "> ") {
+          document.execCommand("formatBlock", false, "blockquote");
+          return;
+        }
+        if (prefix === "- ") {
+          document.execCommand("insertUnorderedList");
+        }
+      }
+
+      function applyLink() {
+        bodyField.focus();
+        const url = window.prompt("輸入連結網址");
+        if (!url) return;
+        const selection = window.getSelection();
+        if (!selection || selection.isCollapsed) {
+          document.execCommand("insertHTML", false, `<a href="${escapeAttribute(url)}">${escapeHtml("連結文字")}</a>`);
+          return;
+        }
+        document.execCommand("createLink", false, url);
+      }
+
+      function insertImageAtSelection(src, alt) {
+        bodyField.focus();
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) {
+          bodyField.insertAdjacentHTML("beforeend", `<p><img src="${escapeAttribute(src)}" alt="${escapeAttribute(alt)}" /></p><p><br></p>`);
+          return;
+        }
+        const range = selection.getRangeAt(0);
+        range.deleteContents();
+        const wrapper = document.createElement("p");
+        const image = document.createElement("img");
+        image.src = src;
+        image.alt = alt;
+        wrapper.appendChild(image);
+        range.insertNode(wrapper);
+        const tail = document.createElement("p");
+        tail.innerHTML = "<br>";
+        wrapper.after(tail);
+        const nextRange = document.createRange();
+        nextRange.setStart(tail, 0);
+        nextRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(nextRange);
+      }
+
+      function markdownToHtml(markdown) {
+        if (!markdown) return "";
+        const lines = markdown.split("\n");
+        const blocks = [];
+        let paragraph = [];
+        let listItems = [];
+        let quoteItems = [];
+
+        const flushParagraph = () => {
+          if (!paragraph.length) return;
+          blocks.push(`<p>${parseInlineMarkdown(paragraph.join(" "))}</p>`);
+          paragraph = [];
+        };
+
+        const flushList = () => {
+          if (!listItems.length) return;
+          blocks.push(`<ul>${listItems.map((item) => `<li>${parseInlineMarkdown(item)}</li>`).join("")}</ul>`);
+          listItems = [];
+        };
+
+        const flushQuote = () => {
+          if (!quoteItems.length) return;
+          blocks.push(`<blockquote>${quoteItems.map((item) => `<p>${parseInlineMarkdown(item)}</p>`).join("")}</blockquote>`);
+          quoteItems = [];
+        };
+
+        for (const rawLine of lines) {
+          const line = rawLine.trim();
+          if (!line) {
+            flushParagraph();
+            flushList();
+            flushQuote();
+            continue;
+          }
+          if (line.startsWith("### ")) {
+            flushParagraph(); flushList(); flushQuote();
+            blocks.push(`<h3>${parseInlineMarkdown(line.slice(4))}</h3>`);
+            continue;
+          }
+          if (line.startsWith("## ")) {
+            flushParagraph(); flushList(); flushQuote();
+            blocks.push(`<h2>${parseInlineMarkdown(line.slice(3))}</h2>`);
+            continue;
+          }
+          if (line.startsWith("# ")) {
+            flushParagraph(); flushList(); flushQuote();
+            blocks.push(`<h1>${parseInlineMarkdown(line.slice(2))}</h1>`);
+            continue;
+          }
+          if (line.startsWith("- ")) {
+            flushParagraph(); flushQuote();
+            listItems.push(line.slice(2));
+            continue;
+          }
+          if (line.startsWith("> ")) {
+            flushParagraph(); flushList();
+            quoteItems.push(line.slice(2));
+            continue;
+          }
+          paragraph.push(line);
+        }
+
+        flushParagraph();
+        flushList();
+        flushQuote();
+        return blocks.join("");
+      }
+
+      function parseInlineMarkdown(value) {
+        return escapeHtml(value)
+          .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" />')
+          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+          .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+          .replace(/\*([^*]+)\*/g, "<em>$1</em>");
+      }
+
+      function htmlToMarkdown(html) {
+        const container = document.createElement("div");
+        container.innerHTML = html;
+        const blocks = [];
+        container.childNodes.forEach((node) => {
+          const markdown = nodeToMarkdown(node).trimEnd();
+          if (markdown) blocks.push(markdown);
+        });
+        return blocks.join("\n\n").replace(/\n{3,}/g, "\n\n").trim();
+      }
+
+      function nodeToMarkdown(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+          return normalizeText(node.textContent || "");
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) return "";
+
+        const tag = node.tagName.toLowerCase();
+        if (tag === "h1") return `# ${inlineNodesToMarkdown(node)}`;
+        if (tag === "h2") return `## ${inlineNodesToMarkdown(node)}`;
+        if (tag === "h3") return `### ${inlineNodesToMarkdown(node)}`;
+        if (tag === "p" || tag === "div") {
+          const inline = inlineNodesToMarkdown(node);
+          if (!inline && node.querySelector("img")) {
+            return Array.from(node.childNodes).map(nodeToMarkdown).join("\n");
+          }
+          return inline;
+        }
+        if (tag === "blockquote") {
+          return Array.from(node.childNodes)
+            .map((child) => nodeToMarkdown(child))
+            .filter(Boolean)
+            .map((line) => line.split("\n").map((item) => `> ${item}`).join("\n"))
+            .join("\n");
+        }
+        if (tag === "ul") {
+          return Array.from(node.children).map((li) => `- ${inlineNodesToMarkdown(li)}`).join("\n");
+        }
+        if (tag === "ol") {
+          return Array.from(node.children).map((li, index) => `${index + 1}. ${inlineNodesToMarkdown(li)}`).join("\n");
+        }
+        if (tag === "img") {
+          return `![${node.getAttribute("alt") || ""}](${node.getAttribute("src") || ""})`;
+        }
+        return inlineNodesToMarkdown(node);
+      }
+
+      function inlineNodesToMarkdown(node) {
+        return Array.from(node.childNodes).map(inlineNodeToMarkdown).join("").replace(/\u00a0/g, " ").trim();
+      }
+
+      function inlineNodeToMarkdown(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+          return normalizeText(node.textContent || "");
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) return "";
+        const tag = node.tagName.toLowerCase();
+        if (tag === "strong" || tag === "b") return `**${Array.from(node.childNodes).map(inlineNodeToMarkdown).join("")}**`;
+        if (tag === "em" || tag === "i") return `*${Array.from(node.childNodes).map(inlineNodeToMarkdown).join("")}*`;
+        if (tag === "a") return `[${Array.from(node.childNodes).map(inlineNodeToMarkdown).join("")}](${node.getAttribute("href") || ""})`;
+        if (tag === "br") return "\n";
+        if (tag === "img") return `![${node.getAttribute("alt") || ""}](${node.getAttribute("src") || ""})`;
+        return Array.from(node.childNodes).map(inlineNodeToMarkdown).join("");
+      }
+
+      function normalizeText(value) {
+        return value.replace(/\s+/g, " ");
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;");
+      }
+
+      function escapeAttribute(value) {
+        return escapeHtml(value).replaceAll("'", "&#39;");
+      }
+
+      function getImageFromClipboard(clipboardData) {
+        const items = Array.from(clipboardData?.items || []);
+        const imageItem = items.find((item) => item.type.startsWith("image/"));
+        return imageItem ? imageItem.getAsFile() : null;
+      }
+
+      function getImageFromDataTransfer(dataTransfer) {
+        const files = Array.from(dataTransfer?.files || []);
+        return files.find((file) => file.type.startsWith("image/")) || null;
       }
 
       function toBase64(value) {
@@ -569,9 +1833,73 @@
         return btoa(binary);
       }
 
-      function renderMessage(message, isError) {
-        result.innerHTML = message;
+      function renderMessage(message, isError, isHtml = false) {
+        if (isHtml) result.innerHTML = message;
+        else result.textContent = message;
         result.style.color = isError ? "#8a2f25" : "";
+      }
+
+      function updateSelectionToolbar() {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+          hideSelectionToolbar();
+          return;
+        }
+
+        const range = selection.getRangeAt(0);
+        if (!bodyField.contains(range.commonAncestorContainer)) {
+          hideSelectionToolbar();
+          return;
+        }
+
+        savedRange = range.cloneRange();
+        const rect = range.getBoundingClientRect();
+        if (!rect.width && !rect.height) {
+          hideSelectionToolbar();
+          return;
+        }
+
+        const toolbarRect = selectionToolbar.getBoundingClientRect();
+        const top = Math.max(12, rect.top + window.scrollY - toolbarRect.height - 14);
+        const left = Math.min(
+          window.scrollX + window.innerWidth - toolbarRect.width - 12,
+          Math.max(12, rect.left + window.scrollX + rect.width / 2 - toolbarRect.width / 2)
+        );
+
+        selectionToolbar.style.top = `${top}px`;
+        selectionToolbar.style.left = `${left}px`;
+        selectionToolbar.classList.add("is-visible");
+      }
+
+      function hideSelectionToolbar() {
+        selectionToolbar.classList.remove("is-visible");
+      }
+
+      function restoreSavedRange() {
+        if (!savedRange) return;
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(savedRange);
+      }
+
+      function openDrawer() {
+        sidePanel.classList.add("is-open");
+        drawerBackdrop.classList.add("is-open");
+      }
+
+      function openPanel(panelId) {
+        openDrawer();
+        document.querySelectorAll(".panel-section").forEach((panel) => {
+          panel.classList.toggle("is-open", panel.id === panelId);
+        });
+        if (panelId === "library-panel") {
+          loadLibrary();
+        }
+      }
+
+      function closeDrawer() {
+        sidePanel.classList.remove("is-open");
+        drawerBackdrop.classList.remove("is-open");
       }
     </script>
   </body>

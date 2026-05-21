@@ -12,27 +12,45 @@ const site = {
   title: "查爾斯的生活空間",
   description: "關於生活、學習與旅遊的閱讀型個人網站，寫給也喜歡觀察日常的人。",
   eyebrow: "Charles' Living Space",
-  heroTitle: "把生活裡值得停下來的片刻，寫成讓人願意慢慢讀完的文章。",
+  heroTitle: "查爾斯的生活空間",
   intro:
-    "這裡不是工作面板，而是一個面向讀者的個人出版空間。關於生活節奏、學習方法、旅途觀察，還有那些在日常裡慢慢長出來的想法，都會被好好整理後放在這裡。",
-  feature: {
-    label: "Featured Story",
-    title: "寫得更像雜誌，而不是備忘錄",
-    body:
-      "新的首頁把重心放回內容本身。讀者會先看到文章與分類，而不是你的個人進度表，整體更像一個可以被持續閱讀的生活媒體。",
-    items: [
-      "生活：日常觀察、情緒整理、城市節奏",
-      "學習：閱讀方法、語言筆記、知識內化",
-      "旅遊：旅行片段、地方感受、路上的細節"
+    "你好，我是張朝宣 Charles。現在就讀政治大學企管系，關注商業分析、日本市場、AI 應用與跨文化溝通。這裡除了收錄我的文章，也想讓第一次來的人，能很快理解我是誰、正在做什麼，以及我在意哪些事情。",
+  profile: {
+    title: "快速認識 Charles",
+    summary:
+      "我喜歡把商業、內容、資料與國際視野放在一起思考。過去幾年，我一邊累積日本相關經驗，一邊做資料分析、專案合作與市場研究，也持續把這些養分整理成自己的觀察與文章。",
+    education: [
+      "國立政治大學 企業管理學系，2021–2026",
+      "GPA 3.69",
+      "TOEIC 945 / JLPT N1"
+    ],
+    highlights: [
+      "現任 Gao He Yi Sheng Co., Ltd. 的 BD & Japan AI PM，負責日本供應商合作、市場研究與 AI 專案支援",
+      "曾於上海振華重工擔任 HR Intern，參與組織轉型與薪酬規劃研究",
+      "曾與 Meta 相關產業合作做廣告發票資料分析，建立商業洞察與 Tableau 視覺化",
+      "帶隊參與 ATCC 商業競賽，完成面向年輕族群的商業互動平台規劃"
+    ],
+    skills: [
+      "語言：中文 / 英文 / 日文",
+      "分析工具：Python、SQL、Tableau、Google Analytics",
+      "產品與開發：Cursor、Supabase、Vibe Coding",
+      "關注主題：日本市場、AI 產品、商業策略、內容整理"
     ]
   },
-  quote: "好的個人網站，不只是紀錄自己，也是在替讀者保留一種停下來閱讀的理由。",
-  quoteCaption: "當文章被好好整理，它就會從日記變成出版。",
   categories: {
     life: "生活",
     study: "學習",
     travel: "旅遊"
   }
+};
+
+const categoryAliases = {
+  life: "life",
+  "生活": "life",
+  study: "study",
+  "學習": "study",
+  travel: "travel",
+  "旅遊": "travel"
 };
 
 await rm(distDir);
@@ -62,11 +80,14 @@ for (const file of postFiles) {
   const slug = file.replace(/\.md$/, "");
   const html = markdownToHtml(body);
   const excerpt = data.excerpt || createExcerpt(body);
+  const normalizedCategory = normalizeCategory(data.category || "生活");
   posts.push({
     slug,
     title: data.title,
     date: data.date,
-    category: data.category,
+    category: normalizedCategory.key,
+    categoryLabel: normalizedCategory.label,
+    tags: parseTags(data.tags || ""),
     excerpt,
     cover: data.cover || "",
     html
@@ -139,6 +160,28 @@ function createExcerpt(body) {
     .trim()
     .slice(0, 90)
     .concat("...");
+}
+
+function parseTags(value) {
+  return String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeCategory(value) {
+  const raw = String(value || "").trim() || "生活";
+  const alias = categoryAliases[raw];
+  if (alias) {
+    return {
+      key: alias,
+      label: site.categories[alias]
+    };
+  }
+  return {
+    key: raw,
+    label: raw
+  };
 }
 
 function markdownToHtml(markdown) {
@@ -245,145 +288,73 @@ function renderLayout({ title, description, body, backToHome = false }) {
 }
 
 function renderHome(posts) {
-  const categoryButtons = [
-    { key: "all", label: "全部" },
-    ...Object.entries(site.categories).map(([key, label]) => ({ key, label }))
-  ];
-  const featured = posts[0];
-  const latestPosts = posts.slice(1, 4);
-
   const body = `
     <div class="page-shell">
       <header class="hero">
-        <nav class="topbar">
-          <a class="brand" href="#top">${site.title}</a>
-          <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">選單</button>
-          <div class="nav-links" id="site-nav">
-            <a href="#featured">精選文章</a>
-            <a href="#notes">所有文章</a>
-          </div>
-        </nav>
-
         <section class="hero-content" id="top">
-          <div class="hero-copy">
-            <p class="eyebrow">${site.eyebrow}</p>
+          <div class="hero-copy hero-copy-simple">
             <h1>${site.heroTitle}</h1>
             <p class="intro">${site.intro}</p>
-            <div class="hero-actions">
-              <a class="button button-primary" href="#notes">開始閱讀</a>
-              <a class="button button-secondary" href="#featured">本週精選</a>
-            </div>
           </div>
-
-          <aside class="focus-card">
-            <p class="card-label">${site.feature.label}</p>
-            <h2>${site.feature.title}</h2>
-            <p>${site.feature.body}</p>
-            <ul class="focus-list">
-              ${site.feature.items.map((item) => `<li>${item}</li>`).join("")}
-            </ul>
-          </aside>
         </section>
       </header>
 
       <main>
-        <section class="section featured-section" id="featured">
+        <section class="section profile-section" id="about">
           <div class="section-heading">
             <div>
-              <p class="eyebrow">Editor's Pick</p>
-              <h2>先讀這一篇，進入查爾斯的生活空間。</h2>
+              <p class="eyebrow">About Charles</p>
+              <h2>${site.profile.title}</h2>
             </div>
           </div>
 
-          <div class="featured-layout">
-            <article class="panel featured-story">
-              <p class="note-meta">${site.categories[featured.category]} / ${formatDate(featured.date)}</p>
-              <h3>${featured.title}</h3>
-              <p>${featured.excerpt}</p>
-              <a class="story-link" href="./posts/${featured.slug}.html">閱讀全文</a>
+          <p class="profile-summary">${site.profile.summary}</p>
+
+          <div class="profile-grid">
+            <article class="panel profile-card">
+              <p class="panel-label">Education</p>
+              <ul class="profile-list">
+                ${site.profile.education.map((item) => `<li>${item}</li>`).join("")}
+              </ul>
             </article>
 
-            <div class="panel latest-list">
-              <p class="panel-label">Latest</p>
-              ${latestPosts
-                .map(
-                  (post) => `
-                    <a class="latest-item" href="./posts/${post.slug}.html">
-                      <span>${site.categories[post.category]}</span>
-                      <strong>${post.title}</strong>
-                    </a>
-                  `
-                )
-                .join("")}
-            </div>
+            <article class="panel profile-card">
+              <p class="panel-label">Highlights</p>
+              <ul class="profile-list">
+                ${site.profile.highlights.map((item) => `<li>${item}</li>`).join("")}
+              </ul>
+            </article>
+
+            <article class="panel profile-card">
+              <p class="panel-label">Skills & Focus</p>
+              <ul class="profile-list">
+                ${site.profile.skills.map((item) => `<li>${item}</li>`).join("")}
+              </ul>
+            </article>
           </div>
         </section>
 
         <section class="section" id="notes">
-          <div class="section-heading with-inline-control">
+          <div class="section-heading">
             <div>
               <p class="eyebrow">All Articles</p>
-              <h2>關於生活、學習與旅遊的文章索引。</h2>
-            </div>
-            <div class="filter-group" aria-label="文章分類">
-              ${categoryButtons
-                .map(
-                  (item, index) => `
-                  <button class="filter-chip${index === 0 ? " is-active" : ""}" type="button" data-filter="${item.key}">
-                    ${item.label}
-                  </button>`
-                )
-                .join("")}
+              <h2>所有文章</h2>
             </div>
           </div>
 
-          <div class="notes-grid">
+          <div class="notes-grid notes-grid-simple">
             ${posts
               .map(
                 (post) => `
                 <article class="note-card" data-category="${post.category}">
-                  <p class="note-meta">${site.categories[post.category]} / ${formatDate(post.date)}</p>
+                  <p class="note-meta">${post.categoryLabel} / ${formatDate(post.date)}</p>
                   <h3>${post.title}</h3>
+                  ${renderTags(post.tags)}
                   <p>${post.excerpt}</p>
                   <a href="./posts/${post.slug}.html">閱讀文章</a>
                 </article>`
               )
               .join("")}
-          </div>
-        </section>
-
-        <section class="section weekly-section">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Reading Note</p>
-              <h2>讓這個空間更像出版，而不只是資料堆疊。</h2>
-            </div>
-          </div>
-
-          <div class="weekly-grid">
-            <article class="panel rhythm-panel">
-              <p class="panel-label">這裡會持續更新</p>
-              <div class="rhythm-list">
-                <div>
-                  <span>生活</span>
-                  <p>那些看似平凡，卻值得被重新描述的日常片段。</p>
-                </div>
-                <div>
-                  <span>學習</span>
-                  <p>從閱讀、語言、思考方法中整理出能被分享的收穫。</p>
-                </div>
-                <div>
-                  <span>旅遊</span>
-                  <p>旅行裡的人、地方與空氣感，如何改變觀看世界的方式。</p>
-                </div>
-              </div>
-            </article>
-
-            <article class="panel quote-panel">
-              <p class="panel-label">給讀者的一句話</p>
-              <blockquote>${site.quote}</blockquote>
-              <p class="quote-caption">${site.quoteCaption}</p>
-            </article>
           </div>
         </section>
       </main>
@@ -408,7 +379,7 @@ function renderPost(post, relatedPosts) {
               .map(
                 (item) => `
                 <a class="related-item" href="./${item.slug}.html">
-                  <span>${site.categories[item.category]}</span>
+                  <span>${item.categoryLabel}</span>
                   <strong>${item.title}</strong>
                 </a>
               `
@@ -419,8 +390,9 @@ function renderPost(post, relatedPosts) {
 
         <article class="section article-page">
           <a class="back-link" href="../index.html#notes">回到首頁</a>
-          <p class="eyebrow">${site.categories[post.category]} / ${formatDate(post.date)}</p>
+          <p class="eyebrow">${post.categoryLabel} / ${formatDate(post.date)}</p>
           <h1>${post.title}</h1>
+          ${renderTags(post.tags)}
           <p class="article-lead">${post.excerpt}</p>
           <div class="article-body">
             ${post.html}
@@ -454,6 +426,13 @@ function selectRelatedPosts(post, posts) {
 
 function formatDate(value) {
   return value.replaceAll("-", ".");
+}
+
+function renderTags(tags) {
+  if (!tags || !tags.length) {
+    return "";
+  }
+  return `<div class="tag-row">${tags.map((tag) => `<span class="tag-pill">#${escapeHtml(tag)}</span>`).join("")}</div>`;
 }
 
 async function rm(target) {
